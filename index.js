@@ -1,6 +1,6 @@
 const express = require('express');
 const { connectToDb, getDb } = require('./db');
-const {ObjectId} = require("mongodb");
+const { ObjectId } = require('mongodb');
 const cors = require('cors');
 
 const app = express();
@@ -19,7 +19,41 @@ connectToDb((err) => {
 });
 
 app.get('/projects', async (req, res) => {
-    const db = getDb();
-    const collections = await db.collection('Projects').find().toArray();
-    res.status(200).json(collections);
+    try {
+        const db = getDb();
+        const collection = db.collection('Projects');
+
+        const page = parseInt(req.query.page) || 1; // Текущая страница
+        const limit = parseInt(req.query.limit) || 10; // Количество элементов на странице
+
+        const startIndex = (page - 1) * limit;
+        const endIndex = page * limit;
+
+        // Получение данных
+        const projects = await collection.find().toArray();
+        const results = {};
+
+        // Пагинация
+        if (endIndex < projects.length) {
+            results.next = {
+                page: page + 1,
+                limit: limit,
+            };
+        }
+
+        if (startIndex > 0) {
+            results.previous = {
+                page: page - 1,
+                limit: limit,
+            };
+        }
+
+        // Ограничение данных
+        results.results = projects.slice(startIndex, endIndex);
+
+        res.status(200).json(results);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Internal Server Error');
+    }
 });
