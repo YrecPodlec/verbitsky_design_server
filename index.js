@@ -24,7 +24,7 @@ app.get('/projects', async (req, res) => {
         const collection = db.collection('Projects');
 
         const page = parseInt(req.query.page) || 1; // Текущая страница
-        const limit = parseInt(req.query.limit) || 10; // Количество элементов на странице
+        const limit = parseInt(req.query.limit) || 9999999999; // Количество элементов на странице
 
         const startIndex = (page - 1) * limit;
         const endIndex = page * limit;
