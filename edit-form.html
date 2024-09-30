@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Price Item</title>
+  <script>
+    async function handleSubmit(event) {
+      event.preventDefault(); // Предотвращаем стандартную отправку формы
+
+      const formData = new FormData(event.target);
+      const data = Object.fromEntries(formData.entries());
+      const { id } = data; // Получаем ID из данных формы
+
+      try {
+        const response = await fetch(`/price/${id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams(data).toString(),
+        });
+
+        if (response.ok) {
+          alert('Price item updated successfully');
+        } else {
+          alert('Failed to update price item');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while updating the price item');
+      }
+    }
+  </script>
+</head>
+<body>
+<h1>Edit Price Item</h1>
+<form onsubmit="handleSubmit(event)">
+  <!-- Поле для ввода пароля -->
+  <label for="password">Enter Password:</label>
+  <input type="password" id="password" name="password" required><br><br>
+
+  <label for="id">ID of the item to update:</label>
+  <input type="text" id="id" name="id" required><br><br>
+
+  <label for="title">Title:</label>
+  <input type="text" id="title" name="title"><br><br>
+
+  <label for="services">Services (comma-separated):</label>
+  <input type="text" id="services" name="services"><br><br>
+
+  <label for="price">Price:</label>
+  <input type="number" id="price" name="price" step="0.01"><br><br>
+
+  <label for="category">Category:</label>
+  <input type="text" id="category" name="category"><br><br>
+
+  <label for="tags">Tags (comma-separated):</label>
+  <input type="text" id="tags" name="tags"><br><br>
+
+  <label for="status">Status:</label>
+  <select id="status" name="status">
+    <option value="true">Active</option>
+    <option value="false">Inactive</option>
+  </select><br><br>
+
+  <button type="submit">Update</button>
+</form>
+</body>
+</html>

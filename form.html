@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Price Item</title>
+    <script>
+        async function handleSubmit(event) {
+            event.preventDefault(); // Предотвращаем стандартную отправку формы
+
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData.entries());
+
+            try {
+                const response = await fetch('/price', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams(data).toString(),
+                });
+
+                if (response.ok) {
+                    alert('Price item added successfully');
+                } else {
+                    alert('Failed to add price item');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while adding the price item');
+            }
+        }
+    </script>
+</head>
+<body>
+<h1>Add New Price Item</h1>
+<form onsubmit="handleSubmit(event)">
+    <!-- Поле для ввода пароля -->
+    <label for="password">Enter Password:</label>
+    <input type="password" id="password" name="password" required><br><br>
+
+    <label for="title">Title RU:</label>
+    <input type="text" id="title" name="title" required><br><br>
+
+    <label for="services">Services (comma-separated):</label>
+    <input type="text" id="services" name="services" required><br><br>
+
+    <label for="price">Price:</label>
+    <input type="number" id="price" name="price" step="0.01" required><br><br>
+
+    <label for="category">Category:</label>
+    <input type="text" id="category" name="category" required><br><br>
+
+    <label for="tags">Tags (comma-separated):</label>
+    <input type="text" id="tags" name="tags" required><br><br>
+
+    <label for="status">Status:</label>
+    <select id="status" name="status" required>
+        <option value="true">Active</option>
+        <option value="false">Inactive</option>
+    </select><br><br>
+
+    <button type="submit">Submit</button>
+</form>
+</body>
+</html>
