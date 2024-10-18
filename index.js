@@ -44,6 +44,11 @@ app.get('/projects', async (req, res) => {
 
         const startIndex = (page - 1) * limit;
 
+        // Создаем условие для фильтрации только тех проектов, которые содержат нужный префикс
+        const query = {
+            ['title-' + language]: { $exists: true } // Фильтруем проекты, у которых существует поле с нужным языковым префиксом
+        };
+
         // Динамическая проекция для заголовка в зависимости от языка
         const projection = {
             ['title-' + language]: 1, // Выбор title-ru или title-en
@@ -52,10 +57,10 @@ app.get('/projects', async (req, res) => {
         };
 
         // Подсчет общего количества проектов
-        const totalProjects = await collection.countDocuments();
+        const totalProjects = await collection.countDocuments(query);
 
         // Получение данных с проекцией и пагинацией
-        const projects = await collection.find({}, { projection })
+        const projects = await collection.find(query, { projection })
             .skip(startIndex)
             .limit(limit)
             .toArray();
@@ -75,6 +80,7 @@ app.get('/projects', async (req, res) => {
         res.status(500).send('Internal Server Error');
     }
 });
+
 
 // Путь к HTML-странице
 app.get('/add-price', (req, res) => {
@@ -246,3 +252,41 @@ app.get('/questions', async (req, res) => {
         res.status(500).send('Internal Server Error');
     }
 });
+
+// Функция для считывания изображений
+async function getImages(directory) {
+    const images = {};
+
+    try {
+        const folders = await fs.readdir(directory);
+
+        for (const folder of folders) {
+            const folderPath = path.join(directory, folder);
+            const files = await fs.readdir(folderPath);
+
+            images[folder] = files.map(file => ({
+                name: file,
+                url: `/images/${folder}/${file}` // Формируем правильный URL
+            }));
+        }
+    } catch (error) {
+        console.error('Error reading images:', error);
+        throw error; // Пробрасываем ошибку
+    }
+
+    return images;
+}
+
+// Новый маршрут для получения изображений
+app.get('/images', async (req, res) => {
+    try {
+        const images = await getImages(path.join(__dirname, 'public/images'));
+        res.status(200).json(images);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+// Middleware для статического хостинга изображений
+app.use('/images', express.static(path.join(__dirname, 'public/images')));
