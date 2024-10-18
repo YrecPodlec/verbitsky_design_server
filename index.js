@@ -38,9 +38,9 @@ app.get('/projects', async (req, res) => {
         const db = getDb();
         const collection = db.collection('Projects');
 
-        const page = parseInt(req.query.page) || 1; // Текущая страница
-        const limit = parseInt(req.query.limit) || 10; // Количество элементов на странице
-        const language = req.query.language || 'en'; // Язык по умолчанию
+        const page = parseInt(req.query.page); // Текущая страница
+        const limit = parseInt(req.query.limit); // Количество элементов на странице
+        const language = req.query.language; // Язык по умолчанию
 
         const startIndex = (page - 1) * limit;
 
