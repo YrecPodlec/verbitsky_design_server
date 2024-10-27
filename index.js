@@ -40,19 +40,20 @@ app.get('/projects', async (req, res) => {
 
         const page = parseInt(req.query.page); // Текущая страница
         const limit = parseInt(req.query.limit); // Количество элементов на странице
-        const language = req.query.language; // Язык по умолчанию
+        const lang = req.query.lang; // Язык по умолчанию
 
         const startIndex = (page - 1) * limit;
 
         // Создаем условие для фильтрации только тех проектов, которые содержат нужный префикс
         const query = {
-            ['title-' + language]: { $exists: true } // Фильтруем проекты, у которых существует поле с нужным языковым префиксом
+            ['title-' + lang]: { $exists: true }, // Фильтруем проекты, у которых существует поле с нужным языковым префиксом
+            ['description-' + lang]: { $exists: true } // Фильтруем проекты с нужным префиксом для description
         };
 
-        // Динамическая проекция для заголовка в зависимости от языка
+        // Динамическая проекция для заголовка и описания в зависимости от языка
         const projection = {
-            ['title-' + language]: 1, // Выбор title-ru или title-en
-            description: 1,
+            ['title-' + lang]: 1, // Выбор title-ru или title-en
+            ['description-' + lang]: 1, // Выбор description-ru или description-en
             images: 1,
         };
 
@@ -70,7 +71,8 @@ app.get('/projects', async (req, res) => {
             total: totalProjects,
             results: projects.map(project => ({
                 ...project,
-                title: project['title-' + language], // Преобразуем title в зависимости от языка
+                title: project['title-' + lang], // Преобразуем title в зависимости от языка
+                description: project['description-' + lang] // Преобразуем description в зависимости от языка
             }))
         };
 
@@ -80,6 +82,7 @@ app.get('/projects', async (req, res) => {
         res.status(500).send('Internal Server Error');
     }
 });
+
 
 
 // Путь к HTML-странице
@@ -93,7 +96,7 @@ app.get('/edit-price', (req, res) => {
 });
 
 // POST-запрос для добавления нового элемента в коллекцию PriceList
-app.post('/price', checkPassword, async (req, res) => {
+app.post('/prices', checkPassword, async (req, res) => {
     try {
         const db = getDb();
         const collection = db.collection('PriceList');
@@ -199,14 +202,44 @@ app.get('/price', async (request, response) => {
         const db = getDb();
         const collection = db.collection('PriceList');
 
-        // Например, добавить лимит на количество возвращаемых записей (Если их тысячи и миллионы - пагинация обязательна)
-        const price = await collection.find().limit(100).toArray();
+        // Извлекаем префикс локали из query params (например, ?lang=en или ?lang=ru)
+        const locale = request.query.lang;
+
+        // Устанавливаем название полей в зависимости от локали
+        let titleField, servicesField;
+        if (locale === 'en') {
+            titleField = 'title-en';
+            servicesField = 'services-en';
+        } else if (locale === 'ru') {
+            titleField = 'title-ru';
+            servicesField = 'services-ru';
+        } else {
+            // Если локаль не указана или неверная, по умолчанию используем 'ru'
+            titleField = 'title-ru';
+            servicesField = 'services-ru';
+        }
+
+        // Получаем данные, выбирая только нужные поля
+        const price = await collection.find(
+            {}, // Фильтр пустой, т.к. нам нужно выбрать все записи
+            { projection: { [titleField]: 1, [servicesField]: 1, price: 1, category: 1, tags: 1, status: 1 } } // Проецируем только нужные поля
+        ).limit(100).toArray();
 
         if (!price || price.length === 0) {
             return response.status(404).send('No prices found');
         }
 
-        response.status(200).json(price);
+        // Преобразуем результат в нужный формат для клиента (один параметр для title и services)
+        const transformedPrice = price.map(item => ({
+            title: item[titleField],
+            services: item[servicesField],
+            price: item.price,
+            category: item.category,
+            tags: item.tags,
+            status: item.status
+        }));
+
+        response.status(200).json(transformedPrice);
     } catch (error) {
         console.error(error);
         response.status(500).send('Internal Server Error');
